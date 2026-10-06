@@ -53,6 +53,43 @@ def run_simulation(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
     return new_balance, win_count, max_drawdown
 
 
+def run_montecarlo(capitale, rischio_perc, win_rate, risk_to_reward, n_operazioni, n_simulazioni):
+    balance_finale = []
+    drawdown_finale = []
+
+    for index in range(n_simulazioni):
+        balance, win_count, max_drawdown = run_simulation(capitale, rischio_perc, win_rate, risk_to_reward,
+                                                          n_operazioni)
+        balance_finale.append(balance)
+        drawdown_finale.append(max_drawdown)
+
+    return balance_finale, drawdown_finale
+
+
+def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown):
+    total_balance = 0
+    total_drawdown = 0
+    media_balance = 0
+    media_drawdown = 0
+    min_balance = min(lista_balance)
+    max_balance = max(lista_balance)
+    min_drawdown = min(lista_drawdown)
+    max_drawdown = max(lista_drawdown)
+    count_violazione_drawdown = 0
+
+    for index in range(len(lista_balance)):
+        total_balance += lista_balance[index]
+        total_drawdown += lista_drawdown[index]
+        if lista_drawdown[index] > soglia_drawdown:
+            count_violazione_drawdown += 1
+
+    media_balance = total_balance / len(lista_balance)
+    media_drawdown = total_drawdown / len(lista_drawdown)
+    perc_violazione_drawdown = (count_violazione_drawdown / len(lista_drawdown)) * 100
+
+    return media_balance, media_drawdown, min_balance, max_balance, min_drawdown, max_drawdown, count_violazione_drawdown, perc_violazione_drawdown
+
+
 def chiedi_numero(frase, low, high=None, intero=False):
     """Cattura un numero dall'utente in input finchè è valido e lo restituisce"""
     numero_input = 0
@@ -86,13 +123,30 @@ if __name__ == "__main__":
     capitale = chiedi_numero("Capitale: ", MIN_THRESHOLD)
     rischio = chiedi_numero("Rischio su capitale: ", MIN_THRESHOLD, MAX_THRESHOLD)
     risk_to_reward = chiedi_numero("RR: ", MIN_THRESHOLD, MAX_THRESHOLD)
-    n_operazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
+    n_operazioni = int(chiedi_numero("Numero di trade: ", MIN_THRESHOLD, intero=True))
+    n_simulazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
+    soglia_drawdown = chiedi_numero("Limite drawdown: ", MIN_THRESHOLD)
 
-    new_balance, trade_vinti, max_drawdown = run_simulation(capitale, rischio, win_rate, risk_to_reward, n_operazioni)
+    """ new_balance, trade_vinti, max_drawdown = run_simulation(capitale, rischio, win_rate, risk_to_reward, n_operazioni)"""
+
+    lista_balance, lista_drawdown = run_montecarlo(capitale, rischio, win_rate, risk_to_reward, n_operazioni,
+                                                   n_simulazioni)
+
+    media_balance, media_drawdown, min_balance, max_balance, min_drawdown, max_drawdown, count_violazione_drawdown, perc_violazione_drawdown = calcola_statistiche(
+        lista_balance, lista_drawdown, soglia_drawdown)
+
+    print(f"\nBalance medio: {media_balance:,.2f}$")
+    print(f"Drawdown medio: {media_drawdown:,.2f}%")
+    print(f"Balance minimo: {min_balance:,.2f}$")
+    print(f"Balance massimo: {max_balance:,.2f}$")
+    print(f"Drawdown minimo: {min_drawdown:,.2f}%")
+    print(f"Drawdown massimo: {max_drawdown:,.2f}%")
+    print(f"Numero di violazioni della soglia di drawdown: {count_violazione_drawdown}")
+    print(f"Percentuale di simulazioni oltre la soglia: {perc_violazione_drawdown:,.2f}%")
 
     # ,.2f per formattazione numeri con migliaia e decimale. .2f sta per due decimali
-    print(f"Capitale finale: ${new_balance:,.2f}")
+    """ print(f"Capitale finale: ${new_balance:,.2f}")
     print(f"Trade vinti: {trade_vinti}")
     print(f"Trade persi: {n_operazioni - trade_vinti}")
     print(f"Total gain: {((new_balance / capitale) - 1) * 100:,.2f}%")
-    print(f"Max drawdown: {max_drawdown:,.2f}%")
+    print(f"Max drawdown: {max_drawdown:,.2f}%") """
