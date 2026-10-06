@@ -1,11 +1,14 @@
 import random
 
+# Limiti a input utente
+MAX_THRESHOLD = 100
+MIN_THRESHOLD = 0
+
 
 def simula_esito(win_rate):
     """Simula l'esito di un trade (win/loss) in base al tasso di win rate"""
-    result = random.random() <= (win_rate / 100)
 
-    return result
+    return random.random() <= (win_rate / 100)
 
 
 def simula_operazione(capitale, rischio_perc, win_rate, risk_to_reward):
@@ -22,54 +25,74 @@ def simula_operazione(capitale, rischio_perc, win_rate, risk_to_reward):
     return new_balance, operazione_vinta
 
 
+def calcola_drawdown(max_balance, new_balance):
+    """Calcola e restituisce il drawdown calcolato su picco del balance vs balance attuale"""
+
+    return ((max_balance - new_balance) / max_balance) * 100
+
+
 def run_simulation(capitale, rischio_perc, win_rate, risk_to_reward, n_operazioni):
-    """Avvia la simulazione dei trade eseguendone tante quante previste dall'utente"""
+    """Simula l'esito di una serie di trade e ne restituisce le statistiche"""
     win_count = 0
+    max_balance = capitale
     new_balance = capitale
+    max_drawdown = 0
 
     for _ in range(n_operazioni):
         new_balance, trade_vinto = simula_operazione(new_balance, rischio_perc, win_rate, risk_to_reward)
 
         if trade_vinto:
             win_count += 1
+        if new_balance > max_balance:
+            max_balance = new_balance
+        else:
+            drawdown = calcola_drawdown(max_balance, new_balance)
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
 
-    return new_balance, win_count
+    return new_balance, win_count, max_drawdown
 
 
-def chiedi_numero(frase, min, max=None):
-    """Prende in input i valori dall'utente catturando errori e ritorna quei valori"""
+def chiedi_numero(frase, low, high=None, intero=False):
+    """Cattura un numero dall'utente in input finchè è valido e lo restituisce"""
     numero_input = 0
 
     while True:
         try:
             numero_input = float(input(frase))
-        except ValueError as err:
+        except ValueError:
             print("Inserisci un valore valido.")
             continue
-        if max is not None:
-            if numero_input <= min or numero_input > max:
-                print(f"Inserisci un valore tra {min + 1} e {max}")
-                continue
-        else:
-            if numero_input <= min:
-                print(f"Inserisci un valore minimo di {min + 1}")
-                continue
+
+        if intero and not numero_input.is_integer():
+            print("Il numero deve essere un intero.")
+            continue
+
+        if numero_input <= low:
+            print(f"Inserisci un valore maggiore di {low}")
+            continue
+        elif high is not None and numero_input > high:
+            print(f"Inserisci un valore massimo di {high}")
+            continue
+
         break
 
     return numero_input
 
 
-# if __name__ == "__main__" è per far eseguire il codice al suo interno solo da main
+# if __name__ == "__main__" è per far eseguire il codice al suo interno solo quando viene lanciato e non importato
 if __name__ == "__main__":
-    win_rate = chiedi_numero("Win Rate: ", 0, 100)
-    capitale = chiedi_numero("Capitale: ", 0)
-    rischio = chiedi_numero("Rischio su capitale: ", 0, 100)
-    risk_to_reward = chiedi_numero("RR: ", 0, 100)
-    n_operazioni = int(chiedi_numero("Numero di simulazioni: ", 0))
+    win_rate = chiedi_numero("Win Rate: ", MIN_THRESHOLD, MAX_THRESHOLD)
+    capitale = chiedi_numero("Capitale: ", MIN_THRESHOLD)
+    rischio = chiedi_numero("Rischio su capitale: ", MIN_THRESHOLD, MAX_THRESHOLD)
+    risk_to_reward = chiedi_numero("RR: ", MIN_THRESHOLD, MAX_THRESHOLD)
+    n_operazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
 
-    new_balance, trade_vinti = run_simulation(capitale, rischio, win_rate, risk_to_reward, n_operazioni)
+    new_balance, trade_vinti, max_drawdown = run_simulation(capitale, rischio, win_rate, risk_to_reward, n_operazioni)
 
     # ,.2f per formattazione numeri con migliaia e decimale. .2f sta per due decimali
-    print(f"Capitale finale: {new_balance:,.2f})")
-    print(f"Trade vinti: {trade_vinti})")
+    print(f"Capitale finale: ${new_balance:,.2f}")
+    print(f"Trade vinti: {trade_vinti}")
+    print(f"Trade persi: {n_operazioni - trade_vinti}")
     print(f"Total gain: {((new_balance / capitale) - 1) * 100:,.2f}%")
+    print(f"Max drawdown: {max_drawdown:,.2f}%")
