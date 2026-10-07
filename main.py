@@ -125,6 +125,7 @@ def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale
 
 
 def genera_grafico(mediana_simulazioni):
+    """Genera il grafico delle performance della strategia (solo mediana per ora)"""
     plt.plot(range(len(mediana_simulazioni)), mediana_simulazioni)
     plt.xlabel("N° Trade")
     plt.ylabel("Balance ($)")
