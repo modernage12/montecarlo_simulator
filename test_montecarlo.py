@@ -19,6 +19,13 @@ def test_simulation():
     assert drawdown == 0
     assert len(storico) == 11  # 11 perchè partiamo da [0] che contiene il capitale iniziale
 
+    balance, win_count, drawdown, storico = run_simulation(1000, 1, 0, 2, 10)
+
+    assert balance == approx_balance_second
+    assert win_count == 0
+    assert drawdown == approx_drawdown
+    assert len(storico) == 11  # 11 perchè partiamo da [0] che contiene il capitale iniziale
+
 
 def test_statistiche():
     lista_balance = [1200, 850, 1500]
