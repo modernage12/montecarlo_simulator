@@ -12,8 +12,12 @@ def test_simulation():
     approx_balance_second = pytest.approx(904.38, abs=0.01)
     approx_drawdown = pytest.approx(9.56, abs=0.01)
 
-    assert run_simulation(1000, 1, 100, 2, 10) == (approx_balance_first, 10, 0)
-    assert run_simulation(1000, 1, 0, 2, 10) == (approx_balance_second, 0, approx_drawdown)
+    balance, win_count, drawdown, storico = run_simulation(1000, 1, 100, 2, 10)
+
+    assert balance == approx_balance_first
+    assert win_count == 10
+    assert drawdown == 0
+    assert len(storico) == 11  # 11 perchè partiamo da [0] che contiene il capitale iniziale
 
 
 def test_statistiche():

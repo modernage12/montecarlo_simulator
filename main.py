@@ -38,9 +38,11 @@ def run_simulation(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
     max_balance = capitale
     new_balance = capitale
     max_drawdown = 0
+    storico_balance = [capitale]
 
     for _ in range(n_operazioni):
         new_balance, trade_vinto = simula_operazione(new_balance, rischio_perc, win_rate, risk_to_reward)
+        storico_balance.append(new_balance)
 
         if trade_vinto:
             win_count += 1
@@ -51,21 +53,24 @@ def run_simulation(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
 
-    return new_balance, win_count, max_drawdown
+    return new_balance, win_count, max_drawdown, storico_balance
 
 
 def run_montecarlo(capitale, rischio_perc, win_rate, risk_to_reward, n_operazioni, n_simulazioni):
     """Avvia la simulazione Monte Carlo e ne ritorna i risultati di bilancio e drawdown di ogni singola simulazione"""
     balance_finale = []
     drawdown_finale = []
+    storico_balance_finale = []
 
     for _ in range(n_simulazioni):
-        balance, _win_count, max_drawdown = run_simulation(capitale, rischio_perc, win_rate, risk_to_reward,
-                                                           n_operazioni)
+        balance, _win_count, max_drawdown, storico_balance = run_simulation(capitale, rischio_perc, win_rate,
+                                                                            risk_to_reward,
+                                                                            n_operazioni)
         balance_finale.append(balance)
         drawdown_finale.append(max_drawdown)
+        storico_balance_finale.append(storico_balance)
 
-    return balance_finale, drawdown_finale
+    return balance_finale, drawdown_finale, storico_balance_finale
 
 
 def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale):
@@ -143,8 +148,9 @@ if __name__ == "__main__":
     n_simulazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
     soglia_drawdown = chiedi_numero("Limite drawdown: ", MIN_THRESHOLD, MAX_THRESHOLD)
 
-    lista_balance, lista_drawdown = run_montecarlo(capitale, rischio, win_rate, risk_to_reward, n_operazioni,
-                                                   n_simulazioni)
+    lista_balance, lista_drawdown, lista_storico_balance = run_montecarlo(capitale, rischio, win_rate, risk_to_reward,
+                                                                          n_operazioni,
+                                                                          n_simulazioni)
 
     statistiche = calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale)
 
