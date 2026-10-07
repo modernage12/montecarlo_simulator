@@ -1,4 +1,5 @@
 import random
+import statistics
 
 # Limiti a input utente
 MAX_THRESHOLD = 100
@@ -54,40 +55,55 @@ def run_simulation(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
 
 
 def run_montecarlo(capitale, rischio_perc, win_rate, risk_to_reward, n_operazioni, n_simulazioni):
+    """Avvia la simulazione Monte Carlo e ne ritorna i risultati di bilancio e drawdown di ogni singola simulazione"""
     balance_finale = []
     drawdown_finale = []
 
-    for index in range(n_simulazioni):
-        balance, win_count, max_drawdown = run_simulation(capitale, rischio_perc, win_rate, risk_to_reward,
-                                                          n_operazioni)
+    for _ in range(n_simulazioni):
+        balance, _win_count, max_drawdown = run_simulation(capitale, rischio_perc, win_rate, risk_to_reward,
+                                                           n_operazioni)
         balance_finale.append(balance)
         drawdown_finale.append(max_drawdown)
 
     return balance_finale, drawdown_finale
 
 
-def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown):
-    total_balance = 0
-    total_drawdown = 0
-    media_balance = 0
-    media_drawdown = 0
+def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale):
+    """Calcola e ritorna i risultati della simulazione Monte Carlo"""
+    total_balance = sum(lista_balance)
+    total_drawdown = sum(lista_drawdown)
     min_balance = min(lista_balance)
     max_balance = max(lista_balance)
     min_drawdown = min(lista_drawdown)
     max_drawdown = max(lista_drawdown)
+    media_balance = total_balance / len(lista_balance)
+    media_drawdown = total_drawdown / len(lista_drawdown)
+    mediana_balance = statistics.median(lista_balance)
+    mediana_drawdown = statistics.median(lista_drawdown)
+    gain_medio = ((media_balance - capitale) / capitale) * 100
+    gain_mediano = ((mediana_balance - capitale) / capitale) * 100
     count_violazione_drawdown = 0
 
     for index in range(len(lista_balance)):
-        total_balance += lista_balance[index]
-        total_drawdown += lista_drawdown[index]
         if lista_drawdown[index] > soglia_drawdown:
             count_violazione_drawdown += 1
 
-    media_balance = total_balance / len(lista_balance)
-    media_drawdown = total_drawdown / len(lista_drawdown)
     perc_violazione_drawdown = (count_violazione_drawdown / len(lista_drawdown)) * 100
 
-    return media_balance, media_drawdown, min_balance, max_balance, min_drawdown, max_drawdown, count_violazione_drawdown, perc_violazione_drawdown
+    return {
+        "media_balance": media_balance,
+        "media_drawdown": media_drawdown,
+        "min_balance": min_balance,
+        "max_balance": max_balance,
+        "min_drawdown": min_drawdown,
+        "max_drawdown": max_drawdown,
+        "count_violazione_drawdown": count_violazione_drawdown,
+        "perc_violazione_drawdown": perc_violazione_drawdown,
+        "mediana_balance": mediana_balance,
+        "mediana_drawdown": mediana_drawdown,
+        "gain_medio": gain_medio,
+        "gain_mediano": gain_mediano
+    }
 
 
 def chiedi_numero(frase, low, high=None, intero=False):
@@ -125,28 +141,22 @@ if __name__ == "__main__":
     risk_to_reward = chiedi_numero("RR: ", MIN_THRESHOLD, MAX_THRESHOLD)
     n_operazioni = int(chiedi_numero("Numero di trade: ", MIN_THRESHOLD, intero=True))
     n_simulazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
-    soglia_drawdown = chiedi_numero("Limite drawdown: ", MIN_THRESHOLD)
-
-    """ new_balance, trade_vinti, max_drawdown = run_simulation(capitale, rischio, win_rate, risk_to_reward, n_operazioni)"""
+    soglia_drawdown = chiedi_numero("Limite drawdown: ", MIN_THRESHOLD, MAX_THRESHOLD)
 
     lista_balance, lista_drawdown = run_montecarlo(capitale, rischio, win_rate, risk_to_reward, n_operazioni,
                                                    n_simulazioni)
 
-    media_balance, media_drawdown, min_balance, max_balance, min_drawdown, max_drawdown, count_violazione_drawdown, perc_violazione_drawdown = calcola_statistiche(
-        lista_balance, lista_drawdown, soglia_drawdown)
+    statistiche = calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale)
 
-    print(f"\nBalance medio: {media_balance:,.2f}$")
-    print(f"Drawdown medio: {media_drawdown:,.2f}%")
-    print(f"Balance minimo: {min_balance:,.2f}$")
-    print(f"Balance massimo: {max_balance:,.2f}$")
-    print(f"Drawdown minimo: {min_drawdown:,.2f}%")
-    print(f"Drawdown massimo: {max_drawdown:,.2f}%")
-    print(f"Numero di violazioni della soglia di drawdown: {count_violazione_drawdown}")
-    print(f"Percentuale di simulazioni oltre la soglia: {perc_violazione_drawdown:,.2f}%")
-
-    # ,.2f per formattazione numeri con migliaia e decimale. .2f sta per due decimali
-    """ print(f"Capitale finale: ${new_balance:,.2f}")
-    print(f"Trade vinti: {trade_vinti}")
-    print(f"Trade persi: {n_operazioni - trade_vinti}")
-    print(f"Total gain: {((new_balance / capitale) - 1) * 100:,.2f}%")
-    print(f"Max drawdown: {max_drawdown:,.2f}%") """
+    print(f"\nGain medio: {statistiche['gain_medio']:,.2f}%")
+    print(f"Gain mediano: {statistiche['gain_mediano']:,.2f}%")
+    print(f"\nBalance medio: {statistiche['media_balance']:,.2f}$")
+    print(f"Mediana balance: {statistiche['mediana_balance']:,.2f}$")
+    print(f"\nDrawdown medio: {statistiche['media_drawdown']:,.2f}%")
+    print(f"Mediana Drawdown: {statistiche['mediana_drawdown']:,.2f}%")
+    print(f"\nBalance minimo: {statistiche['min_balance']:,.2f}$")
+    print(f"Balance massimo: {statistiche['max_balance']:,.2f}$")
+    print(f"\nDrawdown minimo: {statistiche['min_drawdown']:,.2f}%")
+    print(f"Drawdown massimo: {statistiche['max_drawdown']:,.2f}%")
+    print(f"\nNumero di violazioni della soglia di drawdown: {statistiche['count_violazione_drawdown']}")
+    print(f"Percentuale di simulazioni oltre la soglia: {statistiche['perc_violazione_drawdown']:,.2f}%")
