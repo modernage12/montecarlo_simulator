@@ -2,7 +2,7 @@ import random
 import statistics
 import matplotlib
 
-matplotlib.use("TkAgg")
+matplotlib.use("TkAgg") # Necessario su PyCharm per bug IDE
 import matplotlib.pyplot as plt
 
 # Limiti a input utente
