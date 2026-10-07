@@ -1,4 +1,4 @@
-from main import calcola_drawdown, run_simulation, calcola_statistiche
+from main import calcola_drawdown, run_simulation, calcola_statistiche, run_montecarlo
 import pytest
 
 
@@ -20,6 +20,7 @@ def test_simulation():
     assert len(storico) == 11  # 11 perchè partiamo da [0] che contiene il capitale iniziale
 
     balance, win_count, drawdown, storico = run_simulation(1000, 1, 0, 2, 10)
+
 
     assert balance == approx_balance_second
     assert win_count == 0
@@ -47,3 +48,15 @@ def test_statistiche():
     assert risultati['perc_violazione_drawdown'] == pytest.approx(33.33, abs=0.01)
     assert risultati['gain_medio'] == pytest.approx(18.33, abs=0.01)
     assert risultati['gain_mediano'] == pytest.approx(20, abs=0.01)
+
+
+def test_montecarlo():
+    risultati = run_montecarlo(1000, 1, 55, 2, 3, 3)
+
+    balance_finale, drawdown_finale, storico_balance_finale, mediana_simulazioni = risultati
+
+    assert len(balance_finale) == 3
+    assert len(drawdown_finale) == 3
+    assert len(storico_balance_finale) == 3
+    assert len(mediana_simulazioni) == 4 # viene da storico_balance che parte da [0] con capitale iniziale
+    assert mediana_simulazioni[0] == 1000 # 1000 è il capitale iniziale: la mediana è 1000 per tutte su [0]

@@ -1,5 +1,9 @@
 import random
 import statistics
+import matplotlib
+
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 # Limiti a input utente
 MAX_THRESHOLD = 100
@@ -61,6 +65,7 @@ def run_montecarlo(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
     balance_finale = []
     drawdown_finale = []
     storico_balance_finale = []
+    mediana_simulazioni = []
 
     for _ in range(n_simulazioni):
         balance, _win_count, max_drawdown, storico_balance = run_simulation(capitale, rischio_perc, win_rate,
@@ -70,7 +75,15 @@ def run_montecarlo(capitale, rischio_perc, win_rate, risk_to_reward, n_operazion
         drawdown_finale.append(max_drawdown)
         storico_balance_finale.append(storico_balance)
 
-    return balance_finale, drawdown_finale, storico_balance_finale
+    for n in range(len(storico_balance_finale[0])):
+        lista_simulazioni = []
+
+        for m in range(len(storico_balance_finale)):
+            lista_simulazioni.append(storico_balance_finale[m][n])
+
+        mediana_simulazioni.append(statistics.median(lista_simulazioni))
+
+    return balance_finale, drawdown_finale, storico_balance_finale, mediana_simulazioni
 
 
 def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale):
@@ -111,6 +124,13 @@ def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale
     }
 
 
+def genera_grafico(mediana_simulazioni):
+    plt.plot(range(len(mediana_simulazioni)), mediana_simulazioni)
+    plt.xlabel("N° Trade")
+    plt.ylabel("Balance ($)")
+    plt.show()
+
+
 def chiedi_numero(frase, low, high=None, intero=False):
     """Cattura un numero dall'utente in input finchè è valido e lo restituisce"""
     numero_input = 0
@@ -148,9 +168,11 @@ if __name__ == "__main__":
     n_simulazioni = int(chiedi_numero("Numero di simulazioni: ", MIN_THRESHOLD, intero=True))
     soglia_drawdown = chiedi_numero("Limite drawdown: ", MIN_THRESHOLD, MAX_THRESHOLD)
 
-    lista_balance, lista_drawdown, lista_storico_balance = run_montecarlo(capitale, rischio, win_rate, risk_to_reward,
-                                                                          n_operazioni,
-                                                                          n_simulazioni)
+    lista_balance, lista_drawdown, lista_storico_balance, mediana_simulazioni = run_montecarlo(capitale, rischio,
+                                                                                               win_rate,
+                                                                                               risk_to_reward,
+                                                                                               n_operazioni,
+                                                                                               n_simulazioni)
 
     statistiche = calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale)
 
@@ -166,3 +188,5 @@ if __name__ == "__main__":
     print(f"Drawdown massimo: {statistiche['max_drawdown']:,.2f}%")
     print(f"\nNumero di violazioni della soglia di drawdown: {statistiche['count_violazione_drawdown']}")
     print(f"Percentuale di simulazioni oltre la soglia: {statistiche['perc_violazione_drawdown']:,.2f}%")
+
+    genera_grafico(mediana_simulazioni)
