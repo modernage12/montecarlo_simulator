@@ -2,7 +2,7 @@ import random
 import statistics
 import matplotlib
 
-matplotlib.use("TkAgg") # Necessario su PyCharm per bug IDE
+matplotlib.use("TkAgg")  # Necessario su PyCharm per bug IDE
 import matplotlib.pyplot as plt
 
 # Limiti a input utente
@@ -124,12 +124,32 @@ def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale
     }
 
 
-def genera_grafico(mediana_simulazioni):
-    """Genera il grafico delle performance della strategia (solo mediana per ora)"""
-    plt.plot(range(len(mediana_simulazioni)), mediana_simulazioni)
+def genera_grafico(mediana_simulazioni, migliore_simulazione, peggior_simulazione, capitale):
+    """Genera il grafico delle performance della strategia e capitale iniziale"""
+    max_x = max(range(len(mediana_simulazioni)))
+    plt.plot(range(len(mediana_simulazioni)), mediana_simulazioni, label="Mediana")
+    plt.plot(range(len(migliore_simulazione)), migliore_simulazione, label="Migliore", color="green")
+    plt.plot(range(len(peggior_simulazione)), peggior_simulazione, label="Peggiore", color="red")
+    plt.hlines(capitale, 0, max_x, label="Capitale iniziale", color="black", linestyles="dashed")
+    plt.title("Simulazione Monte Carlo")
     plt.xlabel("N° Trade")
     plt.ylabel("Balance ($)")
+    plt.legend()
     plt.show()
+
+
+def filtra_simulazioni(lista_balance, lista_storico_balance):
+    """Filtra le simulazioni prendendo la migliore e la peggiore e ritorna l'intero storico di entrambe"""
+    posizione_migliore_simulazione = lista_balance.index(max(lista_balance))
+    posizione_peggiore_simulazione = lista_balance.index(min(lista_balance))
+
+    lista_storico_migliore = lista_storico_balance[posizione_migliore_simulazione]
+    lista_storico_peggiore = lista_storico_balance[posizione_peggiore_simulazione]
+
+    return {
+        "lista_storico_migliore": lista_storico_migliore,
+        "lista_storico_peggiore": lista_storico_peggiore
+    }
 
 
 def chiedi_numero(frase, low, high=None, intero=False):
@@ -190,4 +210,6 @@ if __name__ == "__main__":
     print(f"\nNumero di violazioni della soglia di drawdown: {statistiche['count_violazione_drawdown']}")
     print(f"Percentuale di simulazioni oltre la soglia: {statistiche['perc_violazione_drawdown']:,.2f}%")
 
-    genera_grafico(mediana_simulazioni)
+    simulazioni = filtra_simulazioni(lista_balance, lista_storico_balance)
+    genera_grafico(mediana_simulazioni, simulazioni["lista_storico_migliore"], simulazioni["lista_storico_peggiore"],
+                   capitale)
