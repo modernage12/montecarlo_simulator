@@ -126,7 +126,8 @@ def calcola_statistiche(lista_balance, lista_drawdown, soglia_drawdown, capitale
 
 def genera_grafico(mediana_simulazioni, migliore_simulazione, peggior_simulazione, capitale):
     """Genera il grafico delle performance della strategia e capitale iniziale"""
-    max_x = max(range(len(mediana_simulazioni)))
+    max_x = range(len(mediana_simulazioni))[-1]  # l'ultimo elemento di un range è il suo massimo
+
     plt.plot(range(len(mediana_simulazioni)), mediana_simulazioni, label="Mediana")
     plt.plot(range(len(migliore_simulazione)), migliore_simulazione, label="Migliore", color="green")
     plt.plot(range(len(peggior_simulazione)), peggior_simulazione, label="Peggiore", color="red")
@@ -135,11 +136,12 @@ def genera_grafico(mediana_simulazioni, migliore_simulazione, peggior_simulazion
     plt.xlabel("N° Trade")
     plt.ylabel("Balance ($)")
     plt.legend()
+    plt.savefig("grafico.png")
     plt.show()
 
 
-def filtra_simulazioni(lista_balance, lista_storico_balance):
-    """Filtra le simulazioni prendendo la migliore e la peggiore e ritorna l'intero storico di entrambe"""
+def classifica_simulazioni(lista_balance, lista_storico_balance):
+    """Classifica le simulazioni prendendo la migliore e la peggiore e ritorna l'intero storico di entrambe"""
     posizione_migliore_simulazione = lista_balance.index(max(lista_balance))
     posizione_peggiore_simulazione = lista_balance.index(min(lista_balance))
 
@@ -210,6 +212,6 @@ if __name__ == "__main__":
     print(f"\nNumero di violazioni della soglia di drawdown: {statistiche['count_violazione_drawdown']}")
     print(f"Percentuale di simulazioni oltre la soglia: {statistiche['perc_violazione_drawdown']:,.2f}%")
 
-    simulazioni = filtra_simulazioni(lista_balance, lista_storico_balance)
+    simulazioni = classifica_simulazioni(lista_balance, lista_storico_balance)
     genera_grafico(mediana_simulazioni, simulazioni["lista_storico_migliore"], simulazioni["lista_storico_peggiore"],
                    capitale)
